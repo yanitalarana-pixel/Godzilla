@@ -1,0 +1,1720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Godzilla & Niebla: 8-Bit RPG Story</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-cabinet: #07090e;
+      --panel-bg: #0d1117;
+      --border-light: #ffffff;
+      --border-accent: #00f5d4;
+      --text-gold: #ffd166;
+      --text-cyan: #00f5d4;
+      --text-pink: #ff4d6d;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      image-rendering: pixelated;
+    }
+
+    body {
+      font-family: 'Press Start 2P', monospace;
+      background-color: var(--bg-cabinet);
+      background-image: 
+        radial-gradient(circle at 50% 20%, #1a1f35 0%, #07090e 75%);
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Sutil efecto CRT retro sin dificultar la lectura */
+    .crt-scanlines::after {
+      content: " ";
+      display: block;
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.22) 50%
+      );
+      background-size: 100% 4px;
+      z-index: 40;
+      pointer-events: none;
+    }
+
+    /* Contenedor Principal de Consola RPG (3 Zonas Separadas) */
+    #rpg-console {
+      width: 100%;
+      max-width: 900px;
+      height: 100dvh;
+      max-height: 860px;
+      display: flex;
+      flex-direction: column;
+      padding: 8px;
+      gap: 8px;
+      position: relative;
+    }
+
+    @media (min-width: 640px) {
+      #rpg-console {
+        padding: 14px;
+        gap: 10px;
+      }
+    }
+
+    /* Bordes estilo RPG Clásico (Final Fantasy / Undertale) */
+    .rpg-frame {
+      background-color: var(--panel-bg);
+      border: 4px solid #ffffff;
+      box-shadow: 
+        inset 0 0 0 3px #0d1117,
+        inset 0 0 0 5px #4a5568,
+        0 6px 0 rgba(0, 0, 0, 0.7);
+      border-radius: 4px;
+    }
+
+    /* ZONA 1: BARRA SUPERIOR (HUD) */
+    #hud-bar {
+      flex-shrink: 0;
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 9px;
+      z-index: 20;
+    }
+
+    @media (min-width: 640px) {
+      #hud-bar {
+        font-size: 10px;
+        padding: 10px 16px;
+      }
+    }
+
+    /* ZONA 2: ESCENARIO VISUAL PANORÁMICO (STAGE) */
+    #stage-viewport {
+      position: relative;
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 220px;
+      overflow: hidden;
+      background: #050811;
+    }
+
+    /* ZONA 3: CAJA DE DIÁLOGO RPG Y CONTROLES (NUNCA TAPA EL STAGE) */
+    #dialog-panel {
+      flex-shrink: 0;
+      min-height: 195px;
+      max-height: 255px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px 14px;
+      position: relative;
+      z-index: 20;
+    }
+
+    @media (min-width: 640px) {
+      #dialog-panel {
+        min-height: 210px;
+        padding: 16px 20px;
+      }
+    }
+
+    /* Texto del diálogo perfectamente legible */
+    #dialog-text-container {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 4px;
+      cursor: pointer;
+    }
+
+    #dialog-text {
+      font-size: 11px;
+      line-height: 1.85;
+      color: #f8f9fa;
+      letter-spacing: 0.3px;
+      word-break: break-word;
+    }
+
+    @media (min-width: 640px) {
+      #dialog-text {
+        font-size: 13px;
+        line-height: 1.9;
+      }
+    }
+
+    /* Botones RPG Retro */
+    .rpg-btn {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      line-height: 1.4;
+      padding: 9px 12px;
+      border: 3px solid #ffffff;
+      background: #1e293b;
+      color: #ffffff;
+      box-shadow: 0 4px 0 #000000;
+      cursor: pointer;
+      transition: transform 0.1s, background-color 0.15s, box-shadow 0.1s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-align: center;
+    }
+
+    @media (min-width: 640px) {
+      .rpg-btn {
+        font-size: 11px;
+        padding: 10px 15px;
+      }
+    }
+
+    .rpg-btn:hover {
+      background: #334155;
+      border-color: var(--text-gold);
+      color: var(--text-gold);
+      transform: translateY(-1px);
+    }
+
+    .rpg-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #000000;
+    }
+
+    .btn-primary {
+      background: #0f766e;
+      border-color: #2dd4bf;
+    }
+    .btn-primary:hover {
+      background: #115e59;
+      color: #5eead4;
+      border-color: #5eead4;
+    }
+
+    .btn-action {
+      background: #7c2d12;
+      border-color: #fb923c;
+    }
+    .btn-action:hover {
+      background: #9a3412;
+      color: #fed7aa;
+      border-color: #fdba74;
+    }
+
+    .btn-yes {
+      background: #15803d;
+      border-color: #4ade80;
+    }
+    .btn-yes:hover {
+      background: #166534;
+      color: #86efac;
+      border-color: #86efac;
+    }
+
+    .btn-no {
+      background: #991b1b;
+      border-color: #f87171;
+    }
+
+    .btn-party {
+      background: #6b21a8;
+      border-color: #e879f9;
+      animation: pulse-border 1.2s infinite alternate;
+    }
+
+    @keyframes pulse-border {
+      0% { box-shadow: 0 0 0 0 rgba(232, 121, 249, 0.6), 0 4px 0 #000; }
+      100% { box-shadow: 0 0 12px 3px rgba(0, 245, 212, 0.8), 0 4px 0 #000; }
+    }
+
+    /* Fondos de Escenas */
+    .stage-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.7s ease;
+      pointer-events: none;
+    }
+    .stage-bg.active {
+      opacity: 1;
+    }
+
+    /* Acto 1: Océano Profundo */
+    #bg-sea {
+      background: linear-gradient(180deg, #03071e 0%, #023e8a 55%, #0077b6 80%, #0096c7 100%);
+    }
+    /* Acto 2: Costa y Faro */
+    #bg-coast {
+      background: linear-gradient(180deg, #1d3557 0%, #457b9d 52%, #0077b6 52%, #00b4d8 70%, #e9c46a 70%, #d4a373 100%);
+    }
+    /* Acto 3 y 4: Ciudad en Caos */
+    #bg-city {
+      background: linear-gradient(180deg, #10002b 0%, #240046 40%, #3c096c 68%, #212529 68%, #141619 100%);
+    }
+    /* Acto 5, 6, 7, 8: Casa Gótica de Niebla */
+    #bg-house {
+      background: linear-gradient(180deg, #1b1b2f 0%, #162447 45%, #1f4068 68%, #1b4332 68%, #081c15 100%);
+    }
+    /* Acto 9: Fiesta Disco 8-Bits */
+    #bg-disco {
+      background: radial-gradient(circle at 50% 25%, #3a0ca3 0%, #10002b 70%);
+    }
+    /* Acto 10: Mundo Submarino */
+    #bg-underwater {
+      background: linear-gradient(180deg, #00b4d8 0%, #0077b6 30%, #023e8a 75%, #03045e 100%);
+    }
+
+    /* Piso Disco Animado */
+    .disco-grid {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 36%;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 3px;
+      padding: 4px;
+      background: #000;
+      border-top: 4px solid #fff;
+    }
+    .disco-tile {
+      animation: tile-flash 0.8s infinite alternate;
+    }
+    @keyframes tile-flash {
+      0% { opacity: 0.45; filter: brightness(0.8); }
+      100% { opacity: 1; filter: brightness(1.35); }
+    }
+
+    /* Animaciones de Personajes y Escenario */
+    @keyframes screen-shake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-8px, 5px); }
+      40% { transform: translate(8px, -6px); }
+      60% { transform: translate(-6px, -4px); }
+      80% { transform: translate(6px, 4px); }
+    }
+    .shake-anim {
+      animation: screen-shake 0.4s ease-in-out;
+    }
+
+    @keyframes float-bob {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    .bob-anim {
+      animation: float-bob 2.2s infinite ease-in-out;
+    }
+
+    @keyframes kaiju-dance {
+      0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+      25% { transform: translateY(-16px) rotate(-5deg) scale(1.03); }
+      50% { transform: translateY(0) rotate(0deg) scale(0.98); }
+      75% { transform: translateY(-16px) rotate(5deg) scale(1.03); }
+    }
+    .dance-anim {
+      animation: kaiju-dance 0.55s infinite ease-in-out;
+    }
+
+    @keyframes swim-float {
+      0%, 100% { transform: translate(0, 0px) rotate(3deg); }
+      50% { transform: translate(6px, -16px) rotate(-3deg); }
+    }
+    .swim-anim {
+      animation: swim-float 3s infinite ease-in-out;
+    }
+
+    @keyframes tear-fall {
+      0% { transform: translateY(0) scale(0.8); opacity: 1; }
+      100% { transform: translateY(45px) scale(1.2); opacity: 0; }
+    }
+    .tear-drop {
+      animation: tear-fall 0.75s infinite linear;
+    }
+
+    @keyframes popup-float {
+      0% { transform: translateY(0) scale(0.8); opacity: 1; }
+      80% { transform: translateY(-45px) scale(1.05); opacity: 1; }
+      100% { transform: translateY(-60px) scale(0.9); opacity: 0; }
+    }
+    .combat-popup {
+      position: absolute;
+      font-size: 11px;
+      font-weight: bold;
+      text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+      pointer-events: none;
+      z-index: 35;
+      animation: popup-float 1.3s forwards ease-out;
+    }
+
+    /* Placas dorsales brillantes */
+    .dorsal-plate {
+      transition: fill 0.3s, filter 0.3s;
+    }
+    .atomic-charged .dorsal-plate {
+      fill: #00f5d4 !important;
+      filter: drop-shadow(0 0 8px #00f5d4);
+    }
+    .disco-charged .dorsal-plate {
+      fill: #ff007f !important;
+      filter: drop-shadow(0 0 10px #ff007f);
+    }
+
+    /* Partículas / Burbujas */
+    @keyframes bubble-rise {
+      0% { transform: translateY(0) translateX(0); opacity: 0; }
+      15% { opacity: 0.9; }
+      100% { transform: translateY(-320px) translateX(15px); opacity: 0; }
+    }
+    .stage-particle {
+      position: absolute;
+      pointer-events: none;
+      z-index: 25;
+      animation: bubble-rise 3.4s forwards linear;
+    }
+  </style>
+</head>
+<body class="crt-scanlines">
+
+  <!-- PANTALLA DE INICIO TIPO CARTUCHO DE 8-BITS -->
+  <div id="title-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95">
+    <div class="rpg-frame max-w-lg w-full p-6 sm:p-8 text-center flex flex-col items-center gap-5">
+      <div class="text-[10px] text-cyan-400 tracking-widest border border-cyan-500/50 px-3 py-1 bg-cyan-950/40">
+        ★ NINTENDO / ARCADE 8-BIT EDITION ★
+      </div>
+      
+      <h1 class="text-lg sm:text-2xl text-yellow-300 leading-relaxed drop-shadow-[3px_3px_0_#991b1b]">
+        GODZILLA & NIEBLA<br>
+        <span class="text-xs sm:text-sm text-cyan-300">EL TENEDOR DE LA PAZ</span>
+      </h1>
+
+      <!-- Mini diorama en portada -->
+      <div class="flex items-end justify-center gap-4 bg-slate-900/90 border-2 border-slate-700 px-6 py-4 rounded w-full">
+        <span class="text-4xl animate-bounce">🦖</span>
+        <span class="text-2xl text-pink-400">⚡🍴❤️</span>
+        <span class="text-3xl animate-pulse">🖤</span>
+        <span class="text-2xl">🪶</span>
+      </div>
+
+      <p class="text-[10px] sm:text-xs text-slate-300 leading-loose">
+        Una historia interactiva en 10 actos sobre neurodivergencia, hipervigilancia, un tenedor legendario, un Microraptor de 4 alas, pasos prohibidos y buceo bajo el mar.
+      </p>
+
+      <button id="start-game-btn" class="rpg-btn btn-primary text-xs sm:text-sm py-4 px-6 w-full animate-pulse">
+        ▶ INICIAR JUEGO (ACTIVAR AUDIO 8-BIT)
+      </button>
+    </div>
+  </div>
+
+  <!-- CONSOLA PRINCIPAL (3 ZONAS QUE NUNCA SE ENCIMAN) -->
+  <main id="rpg-console">
+
+    <!-- 1. BARRA SUPERIOR (HUD) -->
+    <header id="hud-bar" class="rpg-frame">
+      <div class="flex items-center gap-3">
+        <span id="act-badge" class="bg-cyan-900 text-cyan-300 border border-cyan-400 px-2 py-1">
+          ACTO 1/10
+        </span>
+        <div class="flex items-center gap-2">
+          <span class="text-pink-400 hidden sm:inline">EMPATÍA:</span>
+          <div class="w-20 sm:w-28 h-3 bg-slate-800 border-2 border-white p-0.5">
+            <div id="empathy-bar" class="h-full bg-gradient-to-r from-pink-500 to-cyan-400 transition-all duration-500" style="width: 20%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span id="music-label" class="text-[8px] sm:text-[9px] text-yellow-300 truncate max-w-[140px] sm:max-w-[230px]">
+          ♪ MARCHA KAIJU 8-BIT
+        </span>
+        <button id="mute-btn" class="rpg-btn !py-1 !px-2 text-[9px]" title="Activar/Silenciar Audio">
+          🔊 ON
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. ESCENARIO VISUAL PANORÁMICO (STAGE) -->
+    <section id="stage-viewport" class="rpg-frame">
+
+      <!-- FONDOS POR ACTO -->
+      <!-- Acto 1: Mar -->
+      <div id="bg-sea" class="stage-bg active">
+        <div class="absolute top-6 left-10 w-14 h-14 rounded-full bg-slate-200/90 shadow-[0_0_25px_#fff]"></div>
+        <!-- Olas traseras -->
+        <div class="absolute bottom-0 inset-x-0 h-20 bg-[#005f73] opacity-80"></div>
+        <div class="absolute bottom-0 inset-x-0 h-12 bg-[#0a9396] border-t-4 border-cyan-200/60"></div>
+      </div>
+
+      <!-- Acto 2: Costa -->
+      <div id="bg-coast" class="stage-bg">
+        <!-- Faro pixel art -->
+        <div class="absolute bottom-[30%] right-12 flex flex-col items-center">
+          <div class="w-6 h-5 bg-yellow-300 animate-pulse border-2 border-black"></div>
+          <div class="w-8 h-24 bg-red-600 border-2 border-black" style="background: repeating-linear-gradient(180deg, #dc2626 0, #dc2626 12px, #ffffff 12px, #ffffff 24px);"></div>
+          <div class="w-12 h-4 bg-slate-700 border-2 border-black"></div>
+        </div>
+      </div>
+
+      <!-- Acto 3 y 4: Ciudad -->
+      <div id="bg-city" class="stage-bg">
+        <!-- Silueta de rascacielos -->
+        <div class="absolute bottom-[32%] inset-x-0 h-40 flex items-end justify-around px-4 opacity-90">
+          <div class="w-14 h-36 bg-slate-900 border-2 border-slate-700 grid grid-cols-2 gap-1 p-1">
+            <div class="bg-yellow-400/70"></div><div class="bg-slate-800"></div><div class="bg-yellow-400/70"></div><div class="bg-yellow-400/70"></div>
+          </div>
+          <div class="w-20 h-28 bg-slate-950 border-2 border-slate-700 grid grid-cols-3 gap-1 p-1">
+            <div class="bg-orange-500 animate-pulse"></div><div class="bg-yellow-300"></div><div class="bg-slate-800"></div>
+          </div>
+          <div class="w-16 h-40 bg-slate-900 border-2 border-slate-700 grid grid-cols-2 gap-1 p-1">
+            <div class="bg-yellow-300/60"></div><div class="bg-red-500 animate-ping"></div><div class="bg-yellow-300/60"></div><div class="bg-slate-800"></div>
+          </div>
+          <div class="w-16 h-24 bg-slate-950 border-2 border-slate-700"></div>
+        </div>
+        <!-- Fuego decorativo en ciudad -->
+        <div id="city-fires" class="absolute bottom-[31%] left-1/3 text-2xl animate-bounce">🔥🔥</div>
+      </div>
+
+      <!-- Acto 5-8: Casa Gótica de Niebla -->
+      <div id="bg-house" class="stage-bg">
+        <!-- Luna llena grande -->
+        <div class="absolute top-5 left-12 w-12 h-12 rounded-full bg-amber-100 shadow-[0_0_20px_#fef3c7]"></div>
+        <!-- Casita Gótica de Niebla a la derecha -->
+        <div id="gothic-house" class="absolute bottom-[30%] right-4 sm:right-10 flex flex-col items-center">
+          <!-- Techo en punta gótico -->
+          <div class="w-0 h-0 border-l-[48px] border-r-[48px] border-b-[44px] border-l-transparent border-r-transparent border-b-purple-950"></div>
+          <!-- Fachada -->
+          <div class="w-20 h-20 bg-slate-900 border-4 border-purple-900 flex flex-col items-center justify-between p-1.5">
+            <div class="w-6 h-6 rounded-t-full bg-amber-400 border-2 border-black"></div>
+            <div class="w-7 h-9 bg-purple-950 border-2 border-amber-500"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acto 9: Fiesta Disco -->
+      <div id="bg-disco" class="stage-bg">
+        <!-- Bola de discoteca pixelada -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 flex flex-col items-center z-20">
+          <div class="w-1 h-6 bg-slate-400"></div>
+          <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-cyan-300 via-white to-pink-400 border-4 border-white shadow-[0_0_30px_#00f5d4] animate-spin"></div>
+        </div>
+        <!-- Banderines de fiesta -->
+        <div class="absolute top-3 inset-x-6 flex justify-between text-sm opacity-90">
+          <span>🪩✨🎶</span>
+          <span>🦖🖤🪶</span>
+          <span>🎶✨🪩</span>
+        </div>
+        <!-- Pista luminosa -->
+        <div id="disco-floor-grid" class="disco-grid"></div>
+      </div>
+
+      <!-- Acto 10: Mundo Submarino -->
+      <div id="bg-underwater" class="stage-bg">
+        <!-- Rayos de sol acuáticos -->
+        <div class="absolute inset-0 opacity-25" style="background: repeating-linear-gradient(115deg, transparent 0, transparent 40px, rgba(144,224,239,0.4) 40px, rgba(144,224,239,0.4) 65px);"></div>
+        <!-- Arrecife y corales abajo -->
+        <div class="absolute bottom-0 inset-x-0 h-14 bg-[#03045e] border-t-4 border-cyan-500 flex items-end justify-around px-6 pb-2 text-xl">
+          <span>🪸🌿</span>
+          <span>🐚🪸</span>
+          <span>🐠🌿</span>
+          <span>🪸🐙</span>
+        </div>
+      </div>
+
+      <!-- CAPA DE EFECTOS Y PROYECTILES (Tanques, Misiles, Popups) -->
+      <div id="fx-layer" class="absolute inset-0 pointer-events-none z-30"></div>
+
+      <!-- Tanque Militar (Acto 4) -->
+      <div id="military-unit" class="absolute bottom-[30%] right-8 hidden transition-all duration-300 z-20">
+        <div class="flex flex-col items-center">
+          <span class="text-[8px] bg-red-700 px-1 border border-white mb-1">EJÉRCITO</span>
+          <div class="text-2xl sm:text-3xl">🚁🚜💥</div>
+        </div>
+      </div>
+
+      <!-- CONTENEDOR DE ACTORES EN EL ESCENARIO -->
+      <div id="actors-layer" class="absolute inset-0 pointer-events-none z-20">
+
+        <!-- 1. GODZILLA COLOSAL (MUY GRANDE E IMPONENTE) -->
+        <div id="godzilla-actor" class="absolute bottom-[16%] left-[4%] sm:left-[10%] transition-all duration-500 origin-bottom" style="transform: translateY(190px);">
+          
+          <!-- Aliento Atómico -->
+          <div id="atomic-beam" class="hidden absolute top-[48px] left-[165px] w-[280px] h-7 bg-gradient-to-r from-white via-cyan-300 to-transparent rounded-r-full shadow-[0_0_25px_#00f5d4] z-30 animate-pulse"></div>
+
+          <!-- Cascada de Lágrimas Pixel Art (Acto 6) -->
+          <div id="gz-tears" class="hidden absolute top-[46px] left-[118px] z-30 flex gap-2">
+            <span class="tear-drop text-2xl">💧</span>
+            <span class="tear-drop text-xl" style="animation-delay: 0.35s;">💦</span>
+          </div>
+
+          <!-- Curita Gigante con Corazón en la rodilla de Godzilla (Acto 7+) -->
+          <div id="gz-bandaid" class="hidden absolute bottom-[34px] left-[132px] z-30 bg-pink-300 border-2 border-black px-1.5 py-0.5 rotate-[-12deg] shadow">
+            <span class="text-[10px]">🩹❤️</span>
+          </div>
+
+          <!-- SVG DE GODZILLA KAIJU-CHIBI GIGANTE (230x220px escalable) -->
+          <svg id="godzilla-svg" class="w-[175px] h-[175px] sm:w-[225px] sm:h-[225px] drop-shadow-[4px_4px_0_rgba(0,0,0,0.8)]" viewBox="0 0 64 64">
+            <!-- Placas Dorsales Luminiscentes (Espalda) -->
+            <polygon class="dorsal-plate" points="18,12 10,16 18,20" fill="#00b4d8"/>
+            <polygon class="dorsal-plate" points="16,20 6,25 16,30" fill="#00f5d4"/>
+            <polygon class="dorsal-plate" points="15,30 5,36 16,40" fill="#00b4d8"/>
+            <polygon class="dorsal-plate" points="16,40 8,45 17,48" fill="#0077b6"/>
+
+            <!-- Cola Larga y Gruesa -->
+            <rect x="2" y="48" width="16" height="10" fill="#1f2d2b"/>
+            <rect x="0" y="44" width="8" height="6" fill="#2b3e3b"/>
+
+            <!-- Cuerpo Colosal -->
+            <rect x="16" y="20" width="26" height="34" fill="#2b3e3b"/>
+            <rect x="18" y="16" width="22" height="6" fill="#2b3e3b"/>
+            <!-- Escamas del pecho/vientre -->
+            <rect x="34" y="24" width="8" height="26" fill="#52736d"/>
+            <rect x="34" y="28" width="8" height="2" fill="#3e5652"/>
+            <rect x="34" y="34" width="8" height="2" fill="#3e5652"/>
+            <rect x="34" y="40" width="8" height="2" fill="#3e5652"/>
+            <rect x="34" y="46" width="8" height="2" fill="#3e5652"/>
+
+            <!-- Cabeza Imponente -->
+            <rect x="20" y="6" width="26" height="16" fill="#2b3e3b"/>
+            <rect x="42" y="10" width="8" height="12" fill="#2b3e3b"/>
+            <!-- Mandíbula / Dientes -->
+            <rect x="42" y="17" width="6" height="2" fill="#ffffff"/>
+            <!-- Mejilla sonrojada (oculta por defecto) -->
+            <rect id="gz-blush" x="34" y="15" width="4" height="2" fill="#ff4d6d" opacity="0"/>
+
+            <!-- Ojos de Godzilla (Cambiantes según estado) -->
+            <g id="gz-eye-normal">
+              <rect x="35" y="9" width="6" height="5" fill="#ffb703"/>
+              <rect x="38" y="10" width="3" height="4" fill="#000000"/>
+              <!-- Ceja feroz -->
+              <polygon id="gz-brow" points="34,8 42,10 42,8" fill="#1f2d2b"/>
+            </g>
+            <!-- Ojo sorprendido/herido -->
+            <g id="gz-eye-shock" class="hidden">
+              <rect x="34" y="8" width="7" height="7" fill="#ffffff"/>
+              <rect x="37" y="10" width="3" height="3" fill="#000000"/>
+            </g>
+            <!-- Ojo feliz/sonriente -->
+            <g id="gz-eye-happy" class="hidden">
+              <rect x="35" y="10" width="6" height="2" fill="#ffffff"/>
+              <rect x="34" y="11" width="2" height="2" fill="#ffffff"/>
+              <rect x="40" y="11" width="2" height="2" fill="#ffffff"/>
+            </g>
+
+            <!-- Brazo y Mano Grande (Para subir a Niebla en el Acto 8) -->
+            <g id="gz-arm" style="transition: transform 0.5s;" transform="translate(0,0)">
+              <rect x="36" y="26" width="13" height="6" fill="#1f2d2b"/>
+              <rect x="47" y="25" width="5" height="6" fill="#52736d"/>
+            </g>
+
+            <!-- Piernas Robustas -->
+            <rect x="18" y="52" width="11" height="10" fill="#1f2d2b"/>
+            <rect x="32" y="52" width="11" height="10" fill="#1f2d2b"/>
+            <!-- Garras de los pies -->
+            <rect x="41" y="58" width="4" height="4" fill="#e5e5e5"/>
+            <rect x="27" y="58" width="4" height="4" fill="#e5e5e5"/>
+          </svg>
+        </div>
+
+        <!-- 2. NIEBLA (CABELLO CORTO NEGRO, CORTE EN V, GÓTICA + TENEDOR / BUCEO) -->
+        <div id="niebla-actor" class="absolute bottom-[18%] right-[16%] transition-all duration-500 opacity-0" style="transform: translateX(120px);">
+          
+          <!-- Burbuja de emoción sobre Niebla -->
+          <div id="niebla-emote" class="hidden absolute -top-7 left-1/2 -translate-x-1/2 bg-black/90 border-2 border-white px-1.5 py-0.5 text-[10px] whitespace-nowrap z-30">
+            ¡!
+          </div>
+
+          <svg class="w-[78px] h-[96px] sm:w-[92px] sm:h-[112px] drop-shadow-[3px_3px_0_rgba(0,0,0,0.8)]" viewBox="0 0 36 44">
+            <!-- Tanque de Oxígeno de Buceo (Acto 10) -->
+            <g id="nb-scuba-tank" class="hidden">
+              <rect x="21" y="16" width="7" height="14" fill="#ffb703" stroke="#000" stroke-width="1"/>
+              <rect x="22" y="14" width="5" height="2" fill="#adb5bd"/>
+            </g>
+
+            <!-- Cabello Negro Corto (Parte trasera) -->
+            <rect x="10" y="4" width="16" height="14" fill="#0b0c10"/>
+            <rect x="8" y="7" width="20" height="10" fill="#11131a"/>
+
+            <!-- Rostro Pálido -->
+            <rect x="11" y="9" width="13" height="10" fill="#fde2e4"/>
+            
+            <!-- Flequillo Icónico con Corte en V en el centro -->
+            <rect x="10" y="5" width="15" height="4" fill="#0b0c10"/>
+            <polygon points="14,9 21,9 17.5,14" fill="#0b0c10"/>
+            <!-- Mechones laterales cortos góticos -->
+            <rect x="9" y="8" width="3" height="11" fill="#0b0c10"/>
+            <rect x="23" y="8" width="3" height="11" fill="#0b0c10"/>
+
+            <!-- Ojos y Labios Góticos -->
+            <rect x="12" y="13" width="2" height="2" fill="#000000"/>
+            <rect x="19" y="13" width="2" height="2" fill="#000000"/>
+            <rect x="15" y="17" width="3" height="1" fill="#590d22"/>
+
+            <!-- Máscara / Visor de Buceo y Regulador (Acto 10 - Deja ver el corte en V) -->
+            <g id="nb-scuba-mask" class="hidden">
+              <rect x="10" y="11" width="14" height="5" fill="#00f5d4" fill-opacity="0.65" stroke="#00bbf9" stroke-width="1"/>
+              <rect x="14" y="16" width="5" height="3" fill="#212529"/>
+              <path d="M 14 17 Q 8 19 22 16" stroke="#adb5bd" stroke-width="1.2" fill="none"/>
+            </g>
+
+            <!-- Vestido / Atuendo Gótico Negro -->
+            <rect x="12" y="19" width="11" height="12" fill="#14141f"/>
+            <!-- Detalle corsé/cuello gótico -->
+            <rect x="14" y="19" width="7" height="2" fill="#3c096c"/>
+            <polygon points="10,31 25,31 22,24 13,24" fill="#1f1f2e"/>
+
+            <!-- Piernas y Botas Góticas Negras -->
+            <rect x="13" y="31" width="3" height="7" fill="#fde2e4"/>
+            <rect x="19" y="31" width="3" height="7" fill="#fde2e4"/>
+            <rect id="nb-boot-1" x="11" y="36" width="5" height="6" fill="#0b0c10"/>
+            <rect id="nb-boot-2" x="19" y="36" width="5" height="6" fill="#0b0c10"/>
+            <!-- Aletas de Buceo (Acto 10) -->
+            <g id="nb-scuba-fins" class="hidden">
+              <rect x="6" y="39" width="9" height="3" fill="#00f5d4"/>
+              <rect x="16" y="39" width="9" height="3" fill="#00f5d4"/>
+            </g>
+
+            <!-- Brazo -->
+            <rect x="9" y="20" width="5" height="4" fill="#14141f"/>
+
+            <!-- ACCESORIO 1: EL TENEDOR GIGANTE RELUCIENTE -->
+            <g id="nb-fork" style="transform-origin: 10px 22px; transition: transform 0.25s;">
+              <rect x="5" y="6" width="2.5" height="24" fill="#adb5bd"/>
+              <rect x="3" y="5" width="7" height="2.5" fill="#dee2e6"/>
+              <!-- Puntas del tenedor -->
+              <rect x="3" y="0" width="1.3" height="5" fill="#ffffff"/>
+              <rect x="5.8" y="0" width="1.3" height="5" fill="#ffffff"/>
+              <rect x="8.6" y="0" width="1.3" height="5" fill="#ffffff"/>
+            </g>
+          </svg>
+        </div>
+
+        <!-- 3. MICRORAPTOR ZHAOIANUS (ANATÓMICAMENTE CORRECTO: 4 ALAS + PLUMAJE IRIDISCENTE) -->
+        <div id="microraptor-actor" class="absolute bottom-[18%] right-[4%] transition-all duration-500 opacity-0" style="transform: translateY(80px);">
+          <!-- Cartelito de Perdón -->
+          <div id="micro-sign" class="bg-amber-100 text-black border-2 border-black px-1.5 py-0.5 text-[8px] text-center mb-0.5 shadow">
+            ¡PERDÓN! 🥺
+          </div>
+
+          <svg class="w-[68px] h-[68px] sm:w-[82px] sm:h-[82px] drop-shadow-[2px_2px_0_#000]" viewBox="0 0 40 40">
+            <!-- Casco Burbuja de Buceo (Acto 10) -->
+            <circle id="micro-helmet" cx="12" cy="13" r="8" fill="#00f5d4" fill-opacity="0.35" stroke="#ffffff" stroke-width="1" class="hidden"/>
+
+            <!-- Cola ósea larga con abanico distal de plumas -->
+            <path d="M 22 22 L 36 12" stroke="#111625" stroke-width="3"/>
+            <polygon points="32,9 39,7 39,16 33,15" fill="#0077b6"/>
+            <polygon points="34,10 38,9 38,14" fill="#00f5d4"/>
+
+            <!-- Cuerpo emplumado negro/azul petróleo iridiscente -->
+            <rect x="12" y="16" width="12" height="8" fill="#111625"/>
+            <rect x="14" y="17" width="8" height="3" fill="#0077b6"/>
+
+            <!-- Cabeza con hocico dentado y cresta de plumas -->
+            <rect x="7" y="10" width="9" height="6" fill="#111625"/>
+            <polygon points="12,10 16,6 17,10" fill="#00b4d8"/>
+            <rect x="9" y="11" width="2" height="2" fill="#ffb703"/>
+
+            <!-- ALA DELANTERA (Brazo con plumas remiges primarias y secundarias) -->
+            <g class=" origin-center">
+              <polygon points="13,19 23,19 25,28 11,26" fill="#023e8a"/>
+              <polygon points="14,22 24,22 25,27 12,26" fill="#00b4d8"/>
+            </g>
+
+            <!-- ALA TRASERA (Patas traseras con largas plumas de vuelo - 4 alas!) -->
+            <rect x="16" y="24" width="3" height="9" fill="#111625"/>
+            <polygon points="18,24 26,26 24,33 17,32" fill="#0077b6"/>
+            <polygon points="19,27 25,28 24,32 18,31" fill="#00f5d4"/>
+            <!-- Garras curvas dromaeosáuridas -->
+            <rect x="13" y="33" width="4" height="2" fill="#ffb703"/>
+          </svg>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. CAJA DE DIÁLOGO RPG Y CONTROLES (NUNCA SE ENCIMA CON EL ESCENARIO) -->
+    <footer id="dialog-panel" class="rpg-frame">
+      
+      <!-- Encabezado del Hablante + Ayuda de lectura rápida -->
+      <div class="flex items-center justify-between border-b-2 border-slate-700 pb-1.5 mb-2">
+        <div class="flex items-center gap-2">
+          <span id="speaker-badge" class="bg-amber-500 text-black px-2 py-0.5 text-[9px] sm:text-[10px] font-bold">
+            NARRADOR
+          </span>
+          <span id="act-title-sub" class="text-[9px] text-cyan-300 hidden sm:inline">
+            El Despertar en el Abismo
+          </span>
+        </div>
+        <span id="skip-hint" class="text-[8px] text-slate-400 cursor-pointer hover:text-white">
+          [Clic texto: Saltar ⏩]
+        </span>
+      </div>
+
+      <!-- Contenedor de Texto Typewriter -->
+      <div id="dialog-text-container" title="Haz clic para mostrar todo el texto de inmediato">
+        <p id="dialog-text"></p>
+      </div>
+
+      <!-- Barra de Botones Interactivos del Acto -->
+      <div id="controls-bar" class="pt-2 mt-1 border-t border-slate-800 flex flex-wrap items-center justify-end gap-2 min-h-[48px]">
+        <!-- Los botones se inyectan dinámicamente según el Acto -->
+      </div>
+
+    </footer>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. MOTOR DE AUDIO 8-BITS (WEB AUDIO API NATIVO - 5 PISTAS + SFX)
+    // =========================================================================
+    const AudioEngine = {
+      ctx: null,
+      muted: false,
+      musicTimer: null,
+      currentTrack: null,
+      step: 0,
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      },
+
+      toggleMute() {
+        this.muted = !this.muted;
+        const btn = document.getElementById('mute-btn');
+        btn.textContent = this.muted ? '🔇 MUTE' : '🔊 ON';
+        if (this.muted) {
+          this.stopMusic();
+        } else if (this.currentTrack) {
+          this.playTrack(this.currentTrack);
+        }
+      },
+
+      tone(freq, type = 'square', duration = 0.12, vol = 0.08, slideTo = null) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        if (slideTo) {
+          osc.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), now + duration);
+        }
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + duration);
+      },
+
+      noise(duration = 0.25, vol = 0.12) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const bufferSize = this.ctx.sampleRate * duration;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const src = this.ctx.createBufferSource();
+        src.buffer = buffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(900, now);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(vol, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        src.start(now);
+      },
+
+      // Efectos de Sonido (SFX)
+      sfx: {
+        blip(pitch = 440) { AudioEngine.tone(pitch, 'square', 0.035, 0.03); },
+        roar() {
+          AudioEngine.noise(0.9, 0.22);
+          AudioEngine.tone(140, 'sawtooth', 0.85, 0.18, 45);
+        },
+        stomp() {
+          AudioEngine.noise(0.3, 0.25);
+          AudioEngine.tone(95, 'square', 0.35, 0.22, 28);
+        },
+        ricochet() {
+          AudioEngine.tone(900, 'square', 0.08, 0.1, 1800);
+        },
+        forkCrit() {
+          AudioEngine.tone(880, 'sawtooth', 0.1, 0.18, 1760);
+          setTimeout(() => AudioEngine.tone(1320, 'square', 0.25, 0.18, 220), 90);
+        },
+        cry() {
+          AudioEngine.tone(392, 'triangle', 0.35, 0.14, 330);
+          setTimeout(() => AudioEngine.tone(330, 'triangle', 0.45, 0.14, 240), 350);
+        },
+        heal() {
+          [523, 659, 784, 1046].forEach((f, i) => {
+            setTimeout(() => AudioEngine.tone(f, 'triangle', 0.18, 0.12), i * 80);
+          });
+        },
+        dodge() {
+          AudioEngine.tone(350, 'square', 0.12, 0.1, 750);
+        },
+        kiss() {
+          [659, 784, 1046, 1318].forEach((f, i) => {
+            setTimeout(() => AudioEngine.tone(f, 'sine', 0.16, 0.14), i * 70);
+          });
+        },
+        bubble() {
+          AudioEngine.tone(280 + Math.random() * 220, 'sine', 0.14, 0.08, 750);
+        }
+      },
+
+      // Secuenciador Musical Multipista
+      stopMusic() {
+        if (this.musicTimer) {
+          clearInterval(this.musicTimer);
+          this.musicTimer = null;
+        }
+      },
+
+      playTrack(trackName) {
+        this.currentTrack = trackName;
+        this.stopMusic();
+        this.step = 0;
+
+        const label = document.getElementById('music-label');
+        const tracks = {
+          kaiju: {
+            title: '♪ PISTA 1: MARCHA KAIJU 8-BIT',
+            tempo: 240,
+            melody: [146.8, 146.8, 174.6, 146.8, 138.6, 130.8, 130.8, 110.0],
+            bass:   [73.4,  73.4,  87.3,  73.4,  69.3,  65.4,  65.4,  55.0],
+            wave: 'sawtooth'
+          },
+          sad: {
+            title: '♪ PISTA 2: LÁGRIMAS DE KAIJU',
+            tempo: 360,
+            melody: [440.0, 392.0, 349.2, 329.6, 293.7, 329.6, 261.6, 220.0],
+            bass:   [110.0, 98.0,  87.3,  82.4,  73.4,  82.4,  65.4,  55.0],
+            wave: 'triangle'
+          },
+          apology: {
+            title: '♪ PISTA 3: CAJITA DE DISCULPA',
+            tempo: 280,
+            melody: [523.3, 659.3, 784.0, 659.3, 880.0, 784.0, 659.3, 587.3],
+            bass:   [261.6, 196.0, 220.0, 164.8, 174.6, 196.0, 261.6, 196.0],
+            wave: 'sine'
+          },
+          disco: {
+            title: '♪ PISTA 4: FIESTA DISCO 135 BPM',
+            tempo: 185,
+            melody: [523.3, 659.3, 784.0, 1046.5, 880.0, 1046.5, 784.0, 659.3],
+            bass:   [130.8, 261.6, 146.8, 293.7,  164.8, 329.6,  196.0, 392.0],
+            wave: 'square'
+          },
+          underwater: {
+            title: '♪ PISTA 5: SUEÑO SUBMARINO 8-BIT',
+            tempo: 270,
+            melody: [392.0, 493.9, 587.3, 784.0, 659.3, 587.3, 493.9, 440.0],
+            bass:   [196.0, 246.9, 146.8, 196.0, 164.8, 246.9, 130.8, 196.0],
+            wave: 'sine'
+          }
+        };
+
+        const t = tracks[trackName];
+        if (!t) return;
+        label.textContent = t.title;
+        if (this.muted) return;
+
+        this.musicTimer = setInterval(() => {
+          if (this.muted) return;
+          const idx = this.step % t.melody.length;
+          this.tone(t.melody[idx], t.wave, (t.tempo / 1000) * 0.85, 0.055);
+          this.tone(t.bass[idx], 'triangle', (t.tempo / 1000) * 0.9, 0.08);
+          if (trackName === 'disco' && this.step % 2 === 1) {
+            this.noise(0.04, 0.04); // Hi-hat disco
+          }
+          this.step++;
+        }, t.tempo);
+      }
+    };
+
+    // =========================================================================
+    // 2. SISTEMA DE DIÁLOGO TYPEWRITER Y UTILIDADES DE ESCENARIO
+    // =========================================================================
+    const dialogTextEl = document.getElementById('dialog-text');
+    const dialogContainerEl = document.getElementById('dialog-text-container');
+    const speakerBadgeEl = document.getElementById('speaker-badge');
+    const controlsBarEl = document.getElementById('controls-bar');
+    const stageViewport = document.getElementById('stage-viewport');
+    const fxLayer = document.getElementById('fx-layer');
+
+    const godzillaActor = document.getElementById('godzilla-actor');
+    const nieblaActor = document.getElementById('niebla-actor');
+    const microraptorActor = document.getElementById('microraptor-actor');
+
+    let typeTimer = null;
+    let fullCurrentText = '';
+    let isTyping = false;
+    let onTypeCompleteCallback = null;
+
+    function say(speaker, text, speakerColor = '#ffd166', onDone = null) {
+      clearInterval(typeTimer);
+      fullCurrentText = text;
+      isTyping = true;
+      onTypeCompleteCallback = onDone;
+
+      speakerBadgeEl.textContent = speaker;
+      speakerBadgeEl.style.backgroundColor = speakerColor;
+      dialogTextEl.textContent = '';
+
+      let i = 0;
+      typeTimer = setInterval(() => {
+        dialogTextEl.textContent += text.charAt(i);
+        dialogContainerEl.scrollTop = dialogContainerEl.scrollHeight;
+        if (i % 3 === 0) {
+          AudioEngine.sfx.blip(speaker === 'NIEBLA' ? 580 : speaker === 'GODZILLA' ? 220 : 420);
+        }
+        i++;
+        if (i >= text.length) {
+          finishTyping();
+        }
+      }, 26);
+    }
+
+    function finishTyping() {
+      if (!isTyping) return;
+      clearInterval(typeTimer);
+      isTyping = false;
+      dialogTextEl.textContent = fullCurrentText;
+      dialogContainerEl.scrollTop = dialogContainerEl.scrollHeight;
+      if (onTypeCompleteCallback) {
+        const cb = onTypeCompleteCallback;
+        onTypeCompleteCallback = null;
+        cb();
+      }
+    }
+
+    // Clic en la caja de texto para autocompletar instantáneamente
+    dialogContainerEl.addEventListener('click', finishTyping);
+    document.getElementById('skip-hint').addEventListener('click', finishTyping);
+
+    function setButtons(buttonsConfig) {
+      controlsBarEl.innerHTML = '';
+      buttonsConfig.forEach(cfg => {
+        const btn = document.createElement('button');
+        btn.className = `rpg-btn ${cfg.style || ''}`;
+        if (cfg.id) btn.id = cfg.id;
+        btn.innerHTML = cfg.label;
+        btn.addEventListener('click', (e) => {
+          if (isTyping) finishTyping();
+          cfg.onClick(e, btn);
+        });
+        controlsBarEl.appendChild(btn);
+      });
+    }
+
+    function setBackground(bgId) {
+      document.querySelectorAll('.stage-bg').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById(bgId);
+      if (target) target.classList.add('active');
+    }
+
+    function updateHUD(actNum, subtitle, empathyPercent) {
+      document.getElementById('act-badge').textContent = `ACTO ${actNum}/10`;
+      document.getElementById('act-title-sub').textContent = subtitle;
+      document.getElementById('empathy-bar').style.width = `${empathyPercent}%`;
+    }
+
+    function shakeStage() {
+      stageViewport.classList.remove('shake-anim');
+      void stageViewport.offsetWidth;
+      stageViewport.classList.add('shake-anim');
+    }
+
+    function spawnPopup(text, xPercent, yPercent, color = '#ffd166') {
+      const pop = document.createElement('div');
+      pop.className = 'combat-popup';
+      pop.style.left = `${xPercent}%`;
+      pop.style.top = `${yPercent}%`;
+      pop.style.color = color;
+      pop.textContent = text;
+      fxLayer.appendChild(pop);
+      setTimeout(() => pop.remove(), 1350);
+    }
+
+    function spawnParticles(emoji, count = 6) {
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'stage-particle text-lg sm:text-xl';
+        p.style.left = `${10 + Math.random() * 80}%`;
+        p.style.bottom = `${10 + Math.random() * 20}%`;
+        p.style.animationDuration = `${2 + Math.random() * 2}s`;
+        p.textContent = emoji;
+        fxLayer.appendChild(p);
+        setTimeout(() => p.remove(), 4000);
+      }
+    }
+
+    function setGodzillaMood(mood) {
+      document.getElementById('gz-eye-normal').classList.add('hidden');
+      document.getElementById('gz-eye-shock').classList.add('hidden');
+      document.getElementById('gz-eye-happy').classList.add('hidden');
+      document.getElementById('gz-tears').classList.add('hidden');
+      document.getElementById('gz-blush').setAttribute('opacity', '0');
+
+      if (mood === 'fierce') {
+        document.getElementById('gz-eye-normal').classList.remove('hidden');
+      } else if (mood === 'shock') {
+        document.getElementById('gz-eye-shock').classList.remove('hidden');
+      } else if (mood === 'crying') {
+        document.getElementById('gz-eye-shock').classList.remove('hidden');
+        document.getElementById('gz-tears').classList.remove('hidden');
+      } else if (mood === 'happy') {
+        document.getElementById('gz-eye-happy').classList.remove('hidden');
+      } else if (mood === 'love') {
+        document.getElementById('gz-eye-happy').classList.remove('hidden');
+        document.getElementById('gz-blush').setAttribute('opacity', '1');
+      }
+    }
+
+    // Construir cuadrícula de piso disco
+    const discoGrid = document.getElementById('disco-floor-grid');
+    const discoColors = ['#ff007f', '#00f5d4', '#fee440', '#9b5de5', '#00bbf9', '#f15bb5'];
+    for (let i = 0; i < 16; i++) {
+      const tile = document.createElement('div');
+      tile.className = 'disco-tile';
+      tile.style.backgroundColor = discoColors[i % discoColors.length];
+      tile.style.animationDelay = `${(i * 0.12) % 0.8}s`;
+      discoGrid.appendChild(tile);
+    }
+
+    // =========================================================================
+    // 3. LOS 10 ACTOS INTERACTIVOS DE LA HISTORIA RPG
+    // =========================================================================
+    let noDodgeCount = 0;
+    let yesScale = 1;
+
+    const Acts = {
+      // -----------------------------------------------------------------------
+      // ACTO 1: EL DESPERTAR EN EL MAR
+      // -----------------------------------------------------------------------
+      act1() {
+        updateHUD(1, 'El Despertar en el Mar', 15);
+        setBackground('bg-sea');
+        AudioEngine.playTrack('kaiju');
+
+        // Estado inicial de actores
+        setGodzillaMood('fierce');
+        godzillaActor.className = 'absolute bottom-[16%] left-[8%] transition-all duration-500 origin-bottom';
+        godzillaActor.style.transform = 'translateY(175px)';
+        nieblaActor.style.opacity = '0';
+        microraptorActor.style.opacity = '0';
+
+        let charges = 0;
+        say(
+          'NARRADOR',
+          'En lo profundo del océano oscuro, un colosal Godzilla duerme bajo las olas... Presiona el botón 3 veces para cargar sus placas dorsales y emerger del mar.',
+          '#38bdf8'
+        );
+
+        setButtons([
+          {
+            label: '🌊 ¡EMERGER DEL ABISMO! (0/3)',
+            style: 'btn-primary',
+            onClick: (e, btn) => {
+              charges++;
+              AudioEngine.sfx.stomp();
+              shakeStage();
+              spawnParticles('🫧', 5);
+
+              const yOffset = 175 - (charges * 58);
+              godzillaActor.style.transform = `translateY(${Math.max(0, yOffset)}px)`;
+              godzillaActor.classList.add('atomic-charged');
+
+              if (charges < 3) {
+                btn.innerHTML = `🌊 ¡EMERGER DEL ABISMO! (${charges}/3)`;
+                spawnPopup(`⚡ CARGA ATÓMICA ${charges * 33}%`, 25, 45, '#00f5d4');
+              } else {
+                AudioEngine.sfx.roar();
+                spawnPopup('🦖 ¡ROOOOAAAR! 100%', 25, 30, '#ffd166');
+                godzillaActor.classList.add('bob-anim');
+                say(
+                  'GODZILLA',
+                  '¡SKREEEEEONK! El Rey de los Monstruos ha emergido del océano con toda su escala colosal.',
+                  '#2dd4bf'
+                );
+                setButtons([
+                  {
+                    label: 'Ir hacia la Costa ➔',
+                    style: 'btn-primary',
+                    onClick: () => Acts.act2()
+                  }
+                ]);
+              }
+            }
+          }
+        ]);
+      },
+
+      // -----------------------------------------------------------------------
+      // ACTO 2: LLEGADA A LA COSTA
+      // -----------------------------------------------------------------------
+      act2() {
+        updateHUD(2, 'Llegada a la Costa', 22);
+        setBackground('bg-coast');
+        godzillaActor.classList.remove('bob-anim');
+        godzillaActor.style.left = '2%';
+        godzillaActor.style.transform = 'translateY(0px)';
+
+        let steps = 0;
+        say(
+          'NARRADOR',
+          'Godzilla toca tierra firme junto al faro costero. Da 3 pisadas sísmicas para avanzar hacia la metrópoli.',
+          '#ffd166'
+        );
+
+        setButtons([
+          {
+            label: '🐾 DAR PISADA SÍSMICA (0/3)',
+            style: 'btn-action',
+            onClick: (e, btn) => {
+              steps++;
+              AudioEngine.sfx.stomp();
+              shakeStage();
+              godzillaActor.style.left = `${2 + steps * 6}%`;
+              spawnPopup('💥 ¡BUM!', 20 + steps * 8, 65, '#fb923c');
+
+              if (steps < 3) {
+                btn.innerHTML = `🐾 DAR PISADA SÍSMICA (${steps}/3)`;
+              } else {
+                say(
+                  'NARRADOR',
+                  'Con cada paso gigante la costa tiembla. A lo lejos se divisan las luces de la gran ciudad...',
+                  '#ffd166'
+                );
+                setButtons([
+                  {
+                    label: 'Entrar a la Ciudad 🏙️ ➔',
+                    style: 'btn-primary',
+                    onClick: () => Acts.act3()
+                  }
+                ]);
+              }
+            }
+          }
+        ]);
+      },
+
+      // -----------------------------------------------------------------------
+      // ACTO 3: CAOS EN LA CIUDAD Y REFLEXIÓN I
+      // -----------------------------------------------------------------------
+      act3() {
+        updateHUD(3, 'Caos en la Ciudad', 30);
+        setBackground('bg-city');
+        godzillaActor.style.left = '8%';
+
+        // Disparo de aliento atómico visual
+        AudioEngine.sfx.roar();
+        shakeStage();
+        const beam = document.getElementById('atomic-beam');
+        beam.classList.remove('hidden');
+        spawnParticles('🔥', 8);
+        setTimeout(() => beam.classList.add('hidden'), 1800);
+
+        // TEXTO EXACTO SOLICITADO 1
+        say(
+          'REFLEXIÓN I',
+          'La neurodivergencia junto a las altas capacidades más los traumas psicológicos y el estrés post trauma no son tierra fértil',
+          '#c084fc'
+        );
+
+        setButtons([
+          {
+            label: '⚡ LANZAR PULSO ATÓMICO',
+            onClick: () => {
+              AudioEngine.sfx.roar();
+              shakeStage();
+              beam.classList.remove('hidden');
+              setTimeout(() => beam.classList.add('hidden'), 1000);
+            }
+          },
+          {
+            label: 'Continuar Acto 4 ➔',
+            style: 'btn-primary',
+            onClick: () => Acts.act4()
+          }
+        ]);
+      },
+
+      // -----------------------------------------------------------------------
+      // ACTO 4: EL ATAQUE HUMANO INÚTIL
+      // -----------------------------------------------------------------------
+      act4() {
+        updateHUD(4, 'Defensa Implacable', 38);
+        const military = document.getElementById('military-unit');
+        military.classList.remove('hidden');
+
+        let ignored = 0;
+        say(
+          'NARRADOR',
+          'Los humanos despliegan tanques y helicópteros atacando a Godzilla, pero a él ni le importa y sigue caminando...',
+          '#f87171'
+        );
+
+        setButtons([
+          {
+            label: '🛡️ IGNORAR ATAQUES MILITARES (0/2)',
+            style: 'btn-action',
+            onClick: (e, btn) => {
+              ignored++;
+              AudioEngine.sfx.ricochet();
+              spawnPopup('🛡️ 0 HP - NO LE IMPORTA', 30, 35, '#4ade80');
+              spawnParticles('💥', 4);
+
+              if (ignored < 2) {
+                btn.innerHTML = `🛡️ IGNORAR ATAQUES MILITARES (${ignored}/2)`;
+              } else {
+                military.classList.add('hidden');
+                say(
+                  'NARRADOR',
+                  'Los misiles rebotan como cosquillas. Godzilla deja atrás el ruido de la ciudad y llega frente a una misteriosa casa gótica...',
+                  '#ffd166'
+                );
+                setButtons([
+                  {
+                    label: 'Llegar a la Casa de Niebla 🏠 ➔',
+                    style: 'btn-primary',
+                    onClick: () => Acts.act5()
+                  }
+                ]);
+              }
+            }
+          }
+        ]);
+      },
+
+      // -----------------------------------------------------------------------
+      // ACTO 5: ¡APARECE NIEBLA! (EL ATAQUE DEL TENEDOR)
+      // -----------------------------------------------------------------------
+      act5() {
+        updateHUD(5, '¡Aparece Niebla!', 45);
+        setBackground('bg-house');
+        godzillaActor.style.left = '6%';
+
+        // Entra Niebla con su cabello corto en V, ropa negra gótica y tenedor
+        nieblaActor.style.opacity = '1';
+        nieblaActor.style.right = '18%';
+        nieblaActor.style.transform = 'translateX(0px)';
+        document.getElementById('nb-fork').style.display = 'block';
+        document.getElementById('nb-fork').style.transform = 'rotate(0deg)';
+
+        const emote = document.getElementById('niebla-emote');
+        emote.textContent = '⚡🍴';
+        emote.classList.remove('hidden');
+
+        say(
+          'NIEBLA',
+          'De la casa sale Niebla (cabello negro corto con corte en V y vestimenta gótica negra) empuñando un reluciente TENEDOR GIGANTE para defender su hogar.',
+          '#f43f5e'
+        );
+
+        setButtons([
+          {
+            label: '⚡ MODO HIPERVIGILANCIA',
+            onClick: () => {
+              AudioEngine.sfx.blip(750);
+              spawnPopup('⚡ ¡ALERTA MÁXIMA!', 66, 38, '#f43f5e');
+            }
+          },
+          {
+            label: '🍴 ¡ATACAR CON EL TENEDOR!',
+            style: 'btn-action',
+            onClick: () => {
+              // Animación de ataque de Niebla con el tenedor
+              nieblaActor.style.right = '42%';
+              document.getElementById('nb-fork').style.transform = 'rotate(-65deg)';
+              AudioEngine.sfx.forkCrit();
+              shakeStage();
+              setGodzillaMood('shock');
+              spawnPopup('🍴 ¡GOLPE CRÍTICO DE TENEDOR! -9999 HP', 25, 28, '#ff4d6d');
+
+              setTimeout(() => {
+                Acts.act6();
+              }, 1150);
+            }
+          }
+        ]);
+      },
+
+      // -----------------------------------------------------------------------
+      // ACTO 6: EL LLANTO DE GODZILLA Y REFLEXIÓN II
+      // -----------------------------------------------------------------------
+      act6() {
+        updateHUD(6, 'El Llanto del Kaiju', 55);
+        AudioEngine.playTrack('sad');
+        AudioEngine.sfx.cry();
+
+        // Godzilla cae sentado y llora desconsoladamente
+        setGodzillaMood('crying');
+        godzillaActor.classList.remove('atomic-charged');
+        godzillaActor.style.transform = 'translateY(16px) rotate(-6deg)';
+
+        // Niebla retrocede preocupada y baja el tenedor
+        nieblaActor.style.right = '22%';
+        document.getElementById('nb-fork').style.transform = 'rotate(25deg)';
+        const emote = document.getElementById('niebla-emote');
+        emote.textContent = '😟 ¡Oh no!';
+        emote.classList.remove('hidden');
+
+        // TEXTO EXACTO SOLICITADO 2
+        say(
+          'REFLEXIÓN II',
+          'A veces la hipervigilancia y la necesidad de sobrevivencia ocasiona conflictos',
+          '#60a5fa'
+        );
+
+        setButtons([
+          {
+            label: '💧 Ver a Godzilla llorar...',
+            onClick: () => {
+              AudioEngine.sfx.cry();
+              spawnPopup('😭 ¡BUAAAAH!', 25, 35, '#38bdf8');
+            }
+          },
+          {
+            label: 'Acercarse a pedir perdón 🥺 ➔',
+            style: 'btn-primary',
+            onClick: () => Acts.act7()
+          }
+        ]);
+      },
+
+      // -----------------------------------------------------------------------
+      // ACTO 7: LA DISCULPA INTERACTIVA (NIEBLA + MICRORAPTOR + ¿ACEPTAS SÍ O NO?)
+      // -----------------------------------------------------------------------
+      act7() {
+        updateHUD(7, 'La Disculpa', 75);
+        AudioEngine.playTrack('apology');
+
+        // Niebla guarda el tenedor y se acerca a Godzilla
+        document.getElementById('nb-fork').style.display = 'none';
+        nieblaActor.style.right = '34%';
+        document.getElementById('niebla-emote').textContent = '🥺🖤🩹';
+
+        // Entra el Microraptor zhaoianus de 4 alas bailando con su cartelito
+        microraptorActor.style.opacity = '1';
+        microraptorActor.style.transform = 'translateY(0px)';
+        microraptorActor.classList.add('dance-anim');
+
+        say(
+          'NIEBLA',
+          'Niebla suelta el tenedor, se acerca muy preocupada junto a un tierno Microraptor zhaoianus de 4 alas emplumadas y le pone una curita a Godzilla.',
+          '#f472b6'
+        );
+
+        setButtons([
+          {
+            label: '🩹 PONER CURITA Y PEDIR PERDÓN',
+            style: 'btn-primary',
+            onClick: () => {
+              AudioEngine.sfx.heal();
+              document.getElementById('gz-bandaid').classList.remove('hidden');
+              spawnParticles('🩹', 4);
+              spawnParticles('❤️', 5);
+              Acts.showApologyQuestion();
+            }
+          }
+        ]);
+      },
+
+      showApologyQuestion() {
+        noDodgeCount = 0;
+        yesScale = 1;
+
+        // FRASE CENTRAL DE DISCULPA + ¿ACEPTAS SÍ O NO?
+        say(
+          'NIEBLA & MICRORAPTOR',
+          '«Lo siento mucho, actué erróneamente... ¿Me perdonas? ¿Aceptas sí o no?»',
+          '#ffd166'
+        );
+
+        controlsBarEl.innerHTML = '';
+
+        // Botón SÍ
+        const yesBtn = document.createElement('button');
+        yesBtn.className = 'rpg-btn btn-yes';
+        yesBtn.innerHTML = '💚 ¡SÍ, TE PERDONO!';
+        yesBtn.addEventListener('click', () => {
+          if (isTyping) finishTyping();
+          AudioEngine.sfx.heal();
+          Acts.act8();
+        });
+
+        // Botón NO (Escurridizo pero dentro de límites seguros)
+        const noBtn = document.createElement('button');
+        noBtn.className = 'rpg-btn btn-no';
+        noBtn.innerHTML = '❌ NO';
+
+        const funnyNoLines = [
+          '¡Oye! ¡Mira a Niebla y al Microraptor de 4 alas haciendo ojitos tiernos! 🥺🪶',
+          '¡Ese tenedor tenía filo emocional, pero la curita tiene mucho amor! 🩹🖤',
+          '¡Incluso las placas dorsales de Godzilla dicen que presiones que SÍ! 🦖💙',
+          '¡Error 404: El botón NO ha huido por exceso de arrepentimiento sincero! ✨',
+          '¡Anda, di que SÍ para desbloquear la mano de Godzilla y los pasos prohibidos! 🪩'
+        ];
+
+        const dodgeNo = (e) => {
+          if (e) e.preventDefault();
+          AudioEngine.sfx.dodge();
+          noDodgeCount++;
+
+          // Hacer crecer el botón SÍ
+          yesScale = Math.min(1.35, 1 + noDodgeCount * 0.07);
+          yesBtn.style.transform = `scale(${yesScale})`;
+
+          // Mover el botón NO de forma divertida sin salirse de la consola
+          const offsetX = (Math.random() - 0.5) * 150;
+          const offsetY = (Math.random() - 0.7) * 55;
+          noBtn.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+          noBtn.innerHTML = ['¡No! 😾', '¡Casi! 🏃', '¡Intenta el SÍ! 💚', '¡Nop! 🪶'][noDodgeCount % 4];
+
+          const msg = funnyNoLines[(noDodgeCount - 1) % funnyNoLines.length];
+          say('SISTEMA RPG', `${msg} — «Lo siento mucho, actué erróneamente... ¿Aceptas sí o no?»`, '#ff4d6d');
+        };
+
+        noBtn.addEventListener('mouseover', dodgeNo);
+        noBtn.addEventListener('touchstart', dodgeNo, { passive: false });
+        noBtn.addEventListener('click', dodgeNo);
+
+        controlsBarEl.appendChild(yesBtn);
+        controlsBarEl.appendChild(noBtn);
+      },
+
+      // -----------------------------------------------------------------------
+      // ACTO 8: GODZILLA SUBE A NIEBLA A SU MANO
+      // -----------------------------------------------------------------------
+      act8() {
+        updateHUD(8, 'Reconciliación Colosal', 95);
+        setGodzillaMood('love');
+        godzillaActor.classList.add('atomic-charged');
+        godzillaActor.style.transform = 'translateY(0px) rotate(0deg)';
+
+        // Godzilla levanta su brazo y sube a Niebla a su palma/hombro
+        document.getElementById('gz-arm').setAttribute('transform', 'translate(2, -8)');
+        nieblaActor.style.right = 'auto';
+        nieblaActor.style.left = '27%';
+        nieblaActor.style.bottom = '36%';
+        document.getElementById('niebla-emote').textContent = '🖤🦖✨';
+
+        spawnParticles('💚', 10);
+        spawnPopup('💖 ¡DISCULPA ACEPTADA! +9999 EMPATÍA', 25, 25, '#4ade80');
+
+        say(
+          'NARRADOR',
+          '¡Godzilla acepta las disculpas con una gran sonrisa! Baja su enorme garra y sube a Niebla a su palma hasta la altura de su hombro mientras el Microraptor celebra.',
+          '#4ade80'
+        );
+
+        setButtons([
+          {
+            label: '¡Bailar Juntos para Celebrar! 🪩💃🦖',
+            style: 'btn-party',
+            onClick: () => Acts.act9()
+          }
+        ]);
+      },
+
+      // -----------------------------------------------------------------------
+      // ACTO 9: PISTA DE BAILE RETRO, PASOS PROHIBIDOS Y EL BESO
+      // -----------------------------------------------------------------------
+      act9() {
+        updateHUD(9, '¡Fiesta Disco & Beso!', 100);
+        setBackground('bg-disco');
+        AudioEngine.playTrack('disco');
+
+        // Posicionar a los 3 en la pista de baile sincronizados
+        godzillaActor.style.left = '8%';
+        godzillaActor.style.bottom = '14%';
+        nieblaActor.style.left = '48%';
+        nieblaActor.style.bottom = '16%';
+        microraptorActor.style.right = '8%';
+        microraptorActor.style.bottom = '16%';
+        document.getElementById('micro-sign').textContent = '🪩 ¡FIESTA! 🪩';
+
+        godzillaActor.classList.add('dance-anim');
+        nieblaActor.classList.add('dance-anim');
+        microraptorActor.classList.add('dance-anim');
+        document.getElementById('niebla-emote').textContent = '💃✨🎶';
+
+        spawnParticles('🪩', 6);
+        spawnParticles('🎶', 8);
+
+        say(
+          'FIESTA 8-BIT',
+          '¡Pista de baile activada! Godzilla saca sus pasos prohibidos, Niebla baila con destellos góticos y el Microraptor agita sus 4 alas al ritmo chiptune.',
+          '#e879f9'
+        );
+
+        setButtons([
+          {
+            label: '🕺 ¡PASO PROHIBIDO!',
+            onClick: () => {
+              AudioEngine.sfx.heal();
+              godzillaActor.classList.toggle('disco-charged');
+              spawnPopup('🕺 ¡PASOS PROHIBIDOS!', 30, 30, '#e879f9');
+              spawnParticles('✨', 8);
+            }
+          },
+          {
+            label: '💋 ¡DARSE UN BESO E IR AL MAR!',
+            style: 'btn-yes',
+            onClick: () => {
+              // Escena del beso antes de ir al mar
+              AudioEngine.sfx.kiss();
+              nieblaActor.style.left = '31%';
+              nieblaActor.style.bottom = '34%';
+              document.getElementById('niebla-emote').textContent = '💋❤️';
+              spawnParticles('❤️', 14);
+              spawnPopup('💋 ¡MUAAAK! ❤️', 35, 22, '#ff4d6d');
+
+              say(
+                'NARRADOR',
+                '¡Niebla le da un tierno beso a Godzilla! Rodeados de corazones de 8-bits, toman su equipo de buceo y corren juntos hacia el océano...',
+                '#ff4d6d'
+              );
+
+              setButtons([
+                {
+                  label: '🌊 ¡SUMERGIRSE BAJO EL MAR JUNTOS! 🤿 ➔',
+                  style: 'btn-primary',
+                  onClick: () => Acts.act10()
+                }
+              ]);
+            }
+          }
+        ]);
+      },
+
+      // -----------------------------------------------------------------------
+      // ACTO 10: FINAL BAJO EL MAR (NIEBLA CON EQUIPO DE BUCEO + GODZILLA + MICRORAPTOR)
+      // -----------------------------------------------------------------------
+      act10() {
+        updateHUD(10, 'Final Bajo el Mar', 100);
+        setBackground('bg-underwater');
+        AudioEngine.playTrack('underwater');
+        AudioEngine.sfx.bubble();
+
+        // Cambiar animación de baile por nado submarino
+        godzillaActor.classList.remove('dance-anim', 'disco-charged');
+        nieblaActor.classList.remove('dance-anim');
+        microraptorActor.classList.remove('dance-anim');
+
+        godzillaActor.classList.add('swim-anim', 'atomic-charged');
+        nieblaActor.classList.add('swim-anim');
+        microraptorActor.classList.add('swim-anim');
+
+        // Posiciones nadando bajo el mar
+        godzillaActor.style.left = '6%';
+        godzillaActor.style.bottom = '22%';
+        nieblaActor.style.left = '46%';
+        nieblaActor.style.bottom = '32%';
+        microraptorActor.style.right = '8%';
+        microraptorActor.style.bottom = '34%';
+
+        // Activar EQUIPO DE BUCEO de Niebla y del Microraptor
+        document.getElementById('nb-scuba-tank').classList.remove('hidden');
+        document.getElementById('nb-scuba-mask').classList.remove('hidden');
+        document.getElementById('nb-scuba-fins').classList.remove('hidden');
+        document.getElementById('micro-helmet').classList.remove('hidden');
+        document.getElementById('micro-sign').textContent = '🤿 GLUB 🫧';
+        document.getElementById('niebla-emote').textContent = '🤿🫧🖤';
+
+        spawnParticles('🫧', 12);
+        spawnParticles('🐠', 4);
+
+        // MENSAJE DE CIERRE SOLICITADO
+        say(
+          'FINAL FELIZ',
+          '¡Equipo invencible de nuevo! 🦖🖤 Entre el caos, la empatía y unos buenos pasos de baile, todo tiene arreglo.',
+          '#00f5d4'
+        );
+
+        setButtons([
+          {
+            label: '🫧 BURBUJAS DE CORAZÓN',
+            onClick: () => {
+              AudioEngine.sfx.bubble();
+              spawnParticles('🫧', 8);
+              spawnParticles('💙', 6);
+              spawnPopup('🫧 GLUB GLUB ❤️', 48, 30, '#00f5d4');
+            }
+          },
+          {
+            label: '⚡ BRILLO SUBMARINO',
+            onClick: () => {
+              AudioEngine.sfx.heal();
+              godzillaActor.classList.toggle('disco-charged');
+              spawnParticles('✨', 10);
+            }
+          },
+          {
+            label: '🔄 JUGAR DE NUEVO',
+            style: 'btn-action',
+            onClick: () => {
+              // Resetear accesorios de buceo y curita para nueva partida
+              document.getElementById('nb-scuba-tank').classList.add('hidden');
+              document.getElementById('nb-scuba-mask').classList.add('hidden');
+              document.getElementById('nb-scuba-fins').classList.add('hidden');
+              document.getElementById('micro-helmet').classList.add('hidden');
+              document.getElementById('gz-bandaid').classList.add('hidden');
+              document.getElementById('micro-sign').textContent = '¡PERDÓN! 🥺';
+              godzillaActor.classList.remove('swim-anim', 'disco-charged');
+              nieblaActor.classList.remove('swim-anim');
+              microraptorActor.classList.remove('swim-anim');
+              Acts.act1();
+            }
+          }
+        ]);
+      }
+    };
+
+    // =========================================================================
+    // 4. INICIALIZACIÓN Y CONTROLES GLOBALES
+    // =========================================================================
+    document.getElementById('mute-btn').addEventListener('click', () => {
+      AudioEngine.toggleMute();
+    });
+
+    document.getElementById('start-game-btn').addEventListener('click', () => {
+      AudioEngine.init();
+      document.getElementById('title-screen').style.display = 'none';
+      Acts.act1();
+    });
+  </script>
+</body>
+</html>
